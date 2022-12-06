@@ -1,0 +1,220 @@
+import re
+
+def registeration():
+    
+    #getting user input
+    
+    res1,a = namecheck()
+    res2,b = phoneNumber()
+    res3,c = MailId_Checking()
+    res4,d = Password_checking()
+    
+    
+    if(res1 == True and res2 == True and res3 == True and res4 == True):
+        
+        try:
+            query="INSERT INTO Login_Details (Name,PhoneNumber,MailId,Password) VALUES (%s,%s,%s,%s)"
+            mycursor.execute(query,(a,b,c,d))
+            mydb.commit()
+            print("Registeration Succesful....")
+            
+            user_ip = input("Would you like to Login...: yes/no")
+            
+            if(user_ip == 'yes'):
+                login()
+            else:
+                print("Existing Process....")
+    
+        except Exception as error:
+    
+    
+            print(format(error))
+            
+            ip = input("Would you like to register again....: yes/no  ")
+            if(ip == 'yes'):
+                registeration()
+            else:
+                print("Exiting process....")
+    clear_console()
+
+def namecheck():
+    
+    name = input("Enter name: ")
+    if(name.isalnum()==False or name.isdigit()==True):
+        print("Name should not start with Number, it can only have Alphabets followed by Numbers, No special char allowed")
+        return namecheck()
+    else:
+        query = "SELECT Name FROM Login_Details WHERE Name  = (%s) "
+        mycursor.execute(query,[name])
+        out=mycursor.fetchall()
+        #print(out)
+        if(len(out)!=0):
+            print("Name u have entered is already Taken, please try again with new name...")
+            return namecheck()
+        else:
+            return True,name
+    
+def phoneNumber():
+    
+    PhoneNumber = input("Enter Phonenumber: ")
+    if(len(PhoneNumber)!=10 or PhoneNumber.isdigit()==False):
+        print("Phone Number Must contain only 10 Digit Number...")
+        return phoneNumber()
+    else:
+        query = "SELECT PhoneNumber FROM Login_Details WHERE PhoneNumber  = (%s) "
+        mycursor.execute(query,[PhoneNumber])
+        out=mycursor.fetchall()
+        #print(out)
+        if(len(out)!=0):
+            print("PhoneNumber u have entered is already registered...")
+            return phoneNumber()
+        else:
+            return True,PhoneNumber
+        
+def MailId_Checking():
+    
+    MailId= input("Enter Mail ID: ")
+    
+    pattern_mail ='^[a-z0-9]+[\._]?[ a-z0-9]+[@]\w+[. ]\w{2,3}$'
+    res = re.findall(pattern_mail,MailId)
+    
+    if(MailId[0].isalpha() == True and len(res)>0 ):  
+        
+        query = "SELECT MailId FROM Login_Details WHERE MailId  = (%s) "
+        mycursor.execute(query,[MailId])
+        out=mycursor.fetchall()
+        #print(out)
+        if(len(out)!=0):
+            print("MaildID u have entered is already registered...")
+            return MailId_Checking()
+        else:
+            return True,MailId          
+        
+    else:
+        
+        print("Mail ID you have entered is Invalid...Sample: sample_mail123@mail.com")
+        return MailId_Checking()
+
+def Password_checking():
+    
+    Password= input("Enter Password: ")
+    reg = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!#%*?&]{5,16}$"
+    pat = re.compile(reg)
+    mat = re.search(pat, Password)
+    if mat:
+        return True,Password
+    else:
+        print("Invalid password... Note: Must have 1->number,Upper letter,lower letter,special char length should be min 6 and max 16")
+        return Password_checking()
+    
+
+def login():
+    
+    name = input("Enter name: ")
+    
+    
+    query = "SELECT name FROM Login_Details WHERE name  = (%s) "
+    mycursor.execute(query,[name])
+    out=mycursor.fetchall()
+    if(len(out)==1):
+        pass_check(name,0)            
+    else:
+        name_check1(name)
+    clear_console()
+            
+def name_check1(name):
+    
+    name1 = name
+    query = "SELECT name FROM Login_Details WHERE name  = (%s) "
+    mycursor.execute(query,[name1])
+    out=mycursor.fetchall()
+    
+    if(len(out)==1):
+        return True
+    else:
+        
+        print("There is no such username, would you like to try again login or would you like to register....")
+        ip = input("|| 1. Login again || 2.Register || please enter 1 or 2 : ")
+        if( ip == '1'):
+            login()
+        else:
+            registeration()
+    
+    
+def pass_check(name,c1):
+    c=c1
+    name1 = name
+    password = input("Enter Password: ")
+    query1 = "SELECT name,password FROM Login_Details WHERE name = '{0}' and Password = '{1}'".format(name1,password)
+    mycursor.execute(query1)
+    out1=mycursor.fetchall()
+    out2 = str(out1).split(",")
+    
+    if (len(out2)!=2):
+        print("Password incorrect !!!... please enter correct password")
+        c+=1
+        #print(c)
+        if(c<3):
+            return pass_check(name1,c)
+        else:
+            
+            ip = input("select || 1. Forget password || 2. Exit ")
+            if(ip =='1'):
+                query2 = "SELECT password FROM Login_Details WHERE name = '{0}'".format(name1)
+                mycursor.execute(query2)
+                out1=mycursor.fetchall()
+                print("Your Password is: ",str(out1).replace('(',"").replace(")","").replace("[","").replace("]","").replace("'","").replace(",",""))
+                c=1
+                return login()
+            else:
+                
+                print("exit process...")
+            
+    else:
+        print("Login Successfully....")
+
+
+def pass_reset():
+    
+    name = input("Enter registered name: ")
+    op = name_check1(name)
+    if(op == True):
+        password = input("Enter new Password: ")   
+        query2 = "UPDATE `login_details` SET `Password`='{0}' WHERE Name ='{1}';".format(password,name)
+        mycursor.execute(query2)
+        print("updated password successfully...")
+    
+        print("Would you like to login..")
+        ip = input("Enter yes/no: ")
+        if(ip == 'yes'):
+            login()
+        else:
+            print("exiting process....")
+        
+    clear_console()
+
+def clear_console():
+    os.system('clear')
+
+#MAIN METHOD
+
+import os
+
+print('''~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ WELCOME ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Please select from the follwoing option:
+1. Register
+2. Login
+3. Forget Password
+4. Exit page''')
+
+ip = input("Enter 1/2/3/4: ")
+
+
+if(ip == '1'):
+    registeration()
+elif( ip == '2'):
+    login()
+elif(ip =='3'):
+    pass_reset()
+else:
+    print("Exiting process")
